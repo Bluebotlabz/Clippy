@@ -1,0 +1,45 @@
+{
+  "IdlingLevel1": [
+    "IdleSideToSide",
+    "IdleEyeBrowRaise",
+    "IdleHeadScratch"
+  ],
+  "IdlingLevel2": [
+    "IdleSideToSide",
+    "IdleFingerTap",
+    "IdleEyeBrowRaise",
+    "IdleHeadScratch"
+  ],
+  "IdlingLevel3": [
+    "IdleFingerTap",
+    "IdleEyeBrowRaise",
+    "IdleHeadScratch",
+    "IdleRopePile",
+    "IdleSnooze",
+    "IdleAtom"
+  ],
+  "Hiding": [
+    "Hide"
+  ],
+  "GesturingLeft": [
+    "GestureLeft"
+  ],
+  "GesturingRight": [
+    "GestureRight"
+  ],
+  "GesturingUp": [
+    "GestureUp"
+  ],
+  "GesturingDown": [
+    "GestureDown"
+  ],
+  "Listening": [
+    "Alert"
+  ],
+  "Hearing": [
+    "Hearing_1"
+  ],
+  "Showing": [
+    "Show"
+  ]
+}
