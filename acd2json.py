@@ -14,7 +14,7 @@ def parseValue(line):
 
 
 currentAnimation = ""
-with open('./CLIPPIT.acd', mode='rb') as file:
+with open('./Agent/CLIPPIT.acd', mode='rb') as file:
     fileData = file.read()
     fileData = fileData.decode(encoding='utf-8', errors='replace')
     lines = fileData.split('\n')
@@ -33,7 +33,7 @@ with open('./CLIPPIT.acd', mode='rb') as file:
             animations[currentAnimation] = []
             print("Found Animation:", currentAnimation)
         elif ("DefineFrame" in line):
-            animationData = {"Duration": None, "Image": None, "Sound": None}
+            animationData = {"Duration": None, "Image": None, "Sound": None, "Branches": {-1: None}}
 
             # Get frame data
             while True:
@@ -45,6 +45,22 @@ with open('./CLIPPIT.acd', mode='rb') as file:
                     animationData["Sound"] = parseValue(line)[-1][1:-1].split('\\')[-1]
                 elif ("Filename" in line):
                     animationData["Image"] = parseValue(line)[-1][1:-1].split('\\')[-1]
+                elif ("DefineBranching" in line):
+                    while True:
+                        i += 1
+                        line = lines[i].strip()
+                        data = parseValue(line)
+                        if ("BranchTo" in data[0]):
+                            i += 1
+                            line = lines[i].strip()
+                            nextData = parseValue(line)
+
+                            # Key = Probability, Value = Frame
+                            animationData["Branches"][int(data[-1])] = nextData[-1]
+                        elif ("EndBranching" in line):
+                            break
+                elif ("ExitBranch" in line):
+                    animationData["Branches"][-1] = int(parseValue(line)[-1])
                 elif ("EndFrame" in line):
                     break
 
@@ -66,11 +82,11 @@ with open('./CLIPPIT.acd', mode='rb') as file:
 
         i += 1
 
-with open('./animations.json', encoding='utf-8', mode='w') as file:
+with open('./Agent/animations.json', encoding='utf-8', mode='w') as file:
     file.write(json.dumps(animations, indent=2))
 
-with open('./states.json', encoding='utf-8', mode='w') as file:
+with open('./Agent/states.json', encoding='utf-8', mode='w') as file:
     file.write(json.dumps(states, indent=2))
 
-with open('./info.json', encoding='utf-8', mode='w') as file:
+with open('./Agent/info.json', encoding='utf-8', mode='w') as file:
     file.write(json.dumps(info, indent=2))

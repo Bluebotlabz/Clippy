@@ -21,7 +21,38 @@ class ClippyTextBox(wx.Frame):
         #self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.SetBackgroundColour(wx.Colour(255, 255, 225))
 
-        self.TextCTRL = wx.TextCtrl(self, style=wx.NO_BORDER|wx.TE_PROCESS_ENTER)
+        # AI Stuff
+        self.AIModel = OpenAIModel()
+
+
+        self.titleText = wx.StaticText(self, label="What would you like to ask?")
+        self.titleText.SetFont(wx.Font(70, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+
+        self.responseLabel = wx.StaticText(self, label="Awaiting input.")
+
+        self.TextCTRL = wx.TextCtrl(self, -1, "", wx.DefaultPosition, wx.Size(200,60), style=wx.NO_BORDER|wx.TE_PROCESS_ENTER|wx.TE_MULTILINE)
+        wx.CallAfter(self.TextCTRL.SetFocus)
+
+
+        self.mainBoxSizer = wx.BoxSizer(wx.VERTICAL)
+        self.buttonBoxSizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.mainBoxSizer.Add(self.titleText, 0, wx.EXPAND|wx.ALL, 5)
+        self.mainBoxSizer.Add(self.responseLabel, 0, wx.EXPAND|wx.ALL, 5)
+        self.mainBoxSizer.Add(self.TextCTRL, 1, wx.ALL, 5)
+        self.mainBoxSizer.AddSpacer(1)
+        self.mainBoxSizer.Add(wx.StaticLine(self, size=wx.Size(150, 1)), 0, wx.EXPAND, 5)
+        self.mainBoxSizer.AddSpacer(1)
+        self.mainBoxSizer.Add(self.buttonBoxSizer, 0, wx.EXPAND|wx.ALL, 0)
+
+
+        self.optionsButton = wx.Button(self, label="Options")
+        self.askButton = wx.Button(self, label="Ask")
+        self.buttonBoxSizer.Add(self.optionsButton, 1, wx.ALL, 2)
+        self.buttonBoxSizer.Add(self.askButton, 1, wx.ALL, 2)
+
+
+        # Bind events
+        self.askButton.Bind(wx.EVT_BUTTON, self.processPrompt)
 
         # Make window fancy and transparent
         ## if wx.Platform == "__WXGTK__":
@@ -29,11 +60,26 @@ class ClippyTextBox(wx.Frame):
         ## else:
         ##     self.SetWindowShape()
 
+        self.SetSizerAndFit(self.mainBoxSizer)
+
     def SetWindowShape(self):
         self.SetClientSize((self.bitmap.GetWidth(), self.bitmap.GetHeight()))
 
         self.region = wx.Region(self.bitmap)
         self.hasShape = self.SetShape(self.region)
+
+    def processPrompt(self, event):
+        response = self.AIModel.prompt(self.TextCTRL.GetValue())
+        print("Prompt:",self.TextCTRL.GetValue())
+        print("Response:",response)
+        size = self.GetSize()
+        self.responseLabel.SetLabelText(response)
+        self.responseLabel.Wrap(self.GetSize()[0] - 25)
+        self.Fit()
+        self.SetSize(size[0], self.GetSize()[1])
+        #self.responseLabel.Wrap(self.GetSize()[0])
+        self.Layout()
+        self.GetParent().MoveMsgFrame()
 
 class ClippyFrame(wx.Frame):
     def __init__(self, *args, animations, states, info, **kwargs):
@@ -45,9 +91,12 @@ class ClippyFrame(wx.Frame):
         # Clippy stuff
         self.currentState = "Showing"
         self.currentAnimation = "Show"
-        self.nextState = "IdlingLevel2"
-        self.nextAnimation = "GetArtsy"
+        self.stateQueue = ["IdlingLevel2"]
+        self.animationQueue = ["GetArtsy"]
+        self.loopCurrentAnimation = False
         self.currentAnimationFrame = 0
+        self.idleLevel = 0
+        self.endCurrentAnimation = False # Used to trigger usage of "Exit Branch"
         self.bitmap = wx.Bitmap('./Agent/Images/0871.bmp')
 
         self.animations = animations
@@ -55,7 +104,7 @@ class ClippyFrame(wx.Frame):
         self.info = info
 
         # Clippy Frame
-        self.msgFrame = ClippyTextBox(None)
+        self.msgFrame = ClippyTextBox(self)
         self.msgFrame.Show(True)
 
 
@@ -65,9 +114,6 @@ class ClippyFrame(wx.Frame):
         
         self.MoveMsgFrame()
         self.delta = wx.Point(0,0)
-
-        # AI Stuff
-        self.AIModel = OpenAIModel()
 
         # Make window fancy and transparent
         if wx.Platform == "__WXGTK__":
@@ -99,12 +145,10 @@ class ClippyFrame(wx.Frame):
         # Check animation state
         if (self.currentAnimationFrame >= len(self.animations[self.currentAnimation])):
             self.currentAnimationFrame = 0
-            if (self.nextAnimation):
-                self.currentAnimation = self.nextAnimation
-                self.nextAnimation = None
-            elif (self.nextState):
-                self.currentState = self.nextState
-                self.nextState = None
+            if (len(self.animationQueue) > 0):
+                self.currentAnimation = self.animationQueue.pop(0)
+            elif (len(self.stateQueue) > 0):
+                self.currentState = self.stateQueue.pop(0)
                 self.currentAnimation = random.choice(self.states[self.currentState])
             else:
                 self.currentAnimation = None
@@ -168,7 +212,7 @@ class ClippyFrame(wx.Frame):
             ###
             # TODO: Implement "bubble GUI"
             ###
-            print("NOT MOVED")
+            self.msgFrame.Show(not self.msgFrame.IsShown())
 
     def OnMouseMove(self, event):
         if event.Dragging() and event.LeftIsDown():
@@ -176,13 +220,11 @@ class ClippyFrame(wx.Frame):
             fp = (x - self.delta[0], y - self.delta[1])
             self.SetPosition(fp)
             self.MoveMsgFrame()
-            #self.widgetsframe.SetPosition(fp)
-
+    
     def MoveMsgFrame(self):
         msgPosition = self.GetPosition()
-        #self.msgBoxOffset = wx.Point(100, 100)
-        self.msgBoxOffset = self.msgFrame.GetSize()
-        msgPosition -= self.msgBoxOffset
+        msgBoxOffset = self.msgFrame.GetSize()
+        msgPosition -= msgBoxOffset
         self.msgFrame.SetPosition(msgPosition)
 
 class ClippyApp(wx.App):

@@ -9,8 +9,6 @@ openai.api_key = secrets["apiKey"]
 class OpenAIModel():
     def __init__(self):
         self.history = ["Clippy is an AI assistant"]
-        self.model = 'text-davinci-003'
-
         self.tipModifier = ''
 
         # Define AI Options
@@ -43,7 +41,16 @@ class OpenAIModel():
 
         while True:
             try:
-                completion = openai.Completion.create(engine=self.model, prompt='\n'.join(self.history))
+                completion = openai.Completion.create(
+                    engine=self.config["engine"],
+                    prompt='\n'.join(self.history), #prompt
+                    temperature=self.config["temperature"],
+                    max_tokens=self.config["max_tokens"],
+                    top_p=self.config["top_p"],
+                    frequency_penalty=self.config["frequency_penalty"],
+                    presence_penalty=self.config["presence_penalty"],
+                )
+                #completion = openai.Completion.create(engine=self.model, prompt='\n'.join(self.history))
                 response = completion.choices[0].text
                 response = response.strip()
 
