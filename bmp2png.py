@@ -1,10 +1,10 @@
 from PIL import Image, ImageChops
 import os
 
-os.makedirs('./png/', exist_ok=True)
+os.makedirs('./Agent/Images', exist_ok=True)
 
-for image in os.listdir('./bmp/'):
-    im = Image.open(os.path.join('./bmp/', image))
+for image in os.listdir('./Agent/bmp/'):
+    im = Image.open(os.path.join('./Agent/bmp/', image))
 
     # Convert bitmap to RGB type
     im = im.convert("RGBA")
@@ -26,6 +26,6 @@ for image in os.listdir('./bmp/'):
     # Add alpha to the image
     im.putalpha(alpha)
 
-    im = im.resize((im.width*4, im.height*4), resample=Image.Resampling.NEAREST)
+    #im = im.resize((im.width*4, im.height*4), resample=Image.Resampling.NEAREST)
 
-    im.save(os.path.join('./png/', image.replace('.bmp', '.png')))
+    im.save(os.path.join('./Agent/Images/', image.replace('.bmp', '.png')))

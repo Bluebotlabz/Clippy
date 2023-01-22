@@ -92,12 +92,12 @@ class ClippyFrame(wx.Frame):
         self.currentState = "Showing"
         self.currentAnimation = "Show"
         self.stateQueue = ["IdlingLevel2"]
-        self.animationQueue = ["GetArtsy"]
+        self.animationQueue = ["Writing"]
         self.loopCurrentAnimation = False
         self.currentAnimationFrame = 0
         self.idleLevel = 0
-        self.endCurrentAnimation = False # Used to trigger usage of "Exit Branch"
-        self.bitmap = wx.Bitmap('./Agent/Images/0871.bmp')
+        self.endCurrentAnimation = True # Used to trigger usage of "Exit Branch"
+        self.bitmap = wx.Bitmap('./Agent/Images/0871.png')
 
         self.animations = animations
         self.states = states
@@ -155,16 +155,22 @@ class ClippyFrame(wx.Frame):
                 self.currentState = None
                 return
 
+        animationFrame = self.animations[self.currentAnimation][self.currentAnimationFrame]
+
+        if (self.endCurrentAnimation and animationFrame["Branches"]['-1'] != None):
+            self.currentAnimationFrame = animationFrame["Branches"]['-1']
+
         # Get image name
-        bitmapName = self.animations[self.currentAnimation][self.currentAnimationFrame]["Image"]
-        soundName = self.animations[self.currentAnimation][self.currentAnimationFrame]["Sound"]
+        bitmapName = animationFrame["Image"]
+        soundName = animationFrame["Sound"]
         if (not bitmapName):
             self.currentAnimationFrame += 1
             self.animationTimer.StartOnce(0)
             return
 
-        self.bitmap = wx.Bitmap('./Agent/Images/' + bitmapName)
-        mask = wx.Mask(self.bitmap, wx.Colour(255,0,255,wx.ALPHA_OPAQUE))
+        self.bitmap = wx.Bitmap('./Agent/Images/' + bitmapName.replace('.bmp', '.png'))
+        #mask = wx.Mask(self.bitmap, wx.Colour(255,0,255,wx.ALPHA_OPAQUE))
+        mask = wx.Mask(self.bitmap, wx.Colour(0,0,0,wx.ALPHA_TRANSPARENT))
         self.bitmap.SetMask(mask)
 
         # Handle sound stuff
@@ -181,16 +187,32 @@ class ClippyFrame(wx.Frame):
         self.Update()
 
         # Prepare for next frame
-        self.animationTimer.StartOnce(self.animations[self.currentAnimation][self.currentAnimationFrame]["Duration"])
-        self.currentAnimationFrame += 1
+
+        # Handle branching in a totally not hacky way
+        if (len(list(animationFrame["Branches"])) > 1):
+            branchableFrames = []
+            for branch in list(animationFrame["Branches"]):
+                branch = int(branch)
+                if (branch != -1):
+                    for i in range(int(animationFrame["Branches"][str(branch)])):
+                        branchableFrames.append(branch)
+
+            while len(branchableFrames) < 100:
+                branchableFrames.append(self.currentAnimationFrame + 1)
+            
+            self.currentAnimationFrame = random.choice(branchableFrames)
+        else:
+            self.currentAnimationFrame += 1
+
+        self.animationTimer.StartOnce(self.animations[self.currentAnimation][self.currentAnimationFrame-1]["Duration"])
 
 
 
     # Handle drawing of Clippy
     def OnPaint(self, event):      
-        self.SetWindowShape()
         dc = wx.AutoBufferedPaintDCFactory(self)
         dc.DrawBitmap(self.bitmap, -1, -1, True)
+        self.SetWindowShape()
 
 
 
