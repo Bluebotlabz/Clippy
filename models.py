@@ -1,3 +1,4 @@
+from transformers import GPT2TokenizerFast
 import openai
 import json
 
@@ -11,17 +12,21 @@ class OpenAIModel():
         self.history = ["Clippy is an AI assistant"]
         self.tipModifier = ''
 
+        self.tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+
         # Define AI Options
         self.defaultConfig = {
             "engine": "text-davinci-003",
-            "temperature": 0.5,
-            "max_tokens": 512,
+            "temperature": 0.75,
+            "max_tokens": 128,
             "top_p": 1,
             "frequency_penalty": 0,
             "presence_penalty": 0,
-            "useMemory": True
+            "useMemory": False
         }
         self.config = self.defaultConfig
+
+        self.costPerKTokens = 0.02
 
     def reset(self):
         self.history = self.history[:1]
@@ -35,12 +40,22 @@ class OpenAIModel():
             response = "[RATELIMITED]\nOur server are overloaded!"
 
     def prompt(self, prompt):
+        if not self.config["useMemory"]:
+            self.reset()
+
         prompt = prompt.strip()
         self.history.append("User: " + prompt)
         self.history.append("Response: ")
 
+        repetitions = 3
         while True:
+            repetitions -= 1
+            if (repetitions == 0):
+                response = "[ERROR] Max Retries Exceeded"
+                break
+
             try:
+                promptTokenCount = len(self.tokenizer('\n'.join(self.history))['input_ids'])
                 completion = openai.Completion.create(
                     engine=self.config["engine"],
                     prompt='\n'.join(self.history), #prompt
@@ -55,11 +70,25 @@ class OpenAIModel():
                 response = response.strip()
 
                 self.history[-1] = "Response: " + response
+                responseTokenCount = len(self.tokenizer(response)['input_ids'])
+                totalTokenCount = promptTokenCount + responseTokenCount
+                totalCost = totalTokenCount * (self.costPerKTokens/1000)
+                print("=========================")
+                print("Prompt:", prompt)
+                print("Response:", response)
+                print("Total Tokens",totalTokenCount)
+                print("Total Cost: $" + '{:.6f}'.format(totalCost))
+                print("=========================")
                 break
             except openai.error.RateLimitError as e:
                 response = "[RATELIMITED]\nOur server are overloaded! Please wait a bit."
                 break
             except openai.error.InvalidRequestError as e:
                 self.history = self.history[3:-3]
+                print(e)
+                exit()
+            except Exception as e:
+                print(e)
+                exit()
 
         return response

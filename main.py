@@ -70,8 +70,6 @@ class ClippyTextBox(wx.Frame):
 
     def processPrompt(self, event):
         response = self.AIModel.prompt(self.TextCTRL.GetValue())
-        print("Prompt:",self.TextCTRL.GetValue())
-        print("Response:",response)
         size = self.GetSize()
         self.responseLabel.SetLabelText(response)
         self.responseLabel.Wrap(self.GetSize()[0] - 25)
