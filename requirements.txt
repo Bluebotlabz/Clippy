@@ -2,3 +2,4 @@ Pillow
 wxPython
 openai
 simpleaudio
+clipboard

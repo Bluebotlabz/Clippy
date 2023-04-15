@@ -1,6 +1,7 @@
 # First things, first. Import the wxPython package.
-from models import OpenAIModel
+from models import ChatGPTModel as OpenAIModel
 import simpleaudio as sa
+import clipboard
 import random
 import json
 import wx
@@ -53,6 +54,8 @@ class ClippyTextBox(wx.Frame):
 
         # Bind events
         self.askButton.Bind(wx.EVT_BUTTON, self.processPrompt)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
+        self.responseLabel.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
 
         # Make window fancy and transparent
         ## if wx.Platform == "__WXGTK__":
@@ -61,6 +64,9 @@ class ClippyTextBox(wx.Frame):
         ##     self.SetWindowShape()
 
         self.SetSizerAndFit(self.mainBoxSizer)
+
+    def OnRightDown(self, event):
+        clipboard.copy(self.responseLabel.GetLabelText())
 
     def SetWindowShape(self):
         self.SetClientSize((self.bitmap.GetWidth(), self.bitmap.GetHeight()))
@@ -231,6 +237,7 @@ class ClippyFrame(wx.Frame):
         if (self.leftDownOriginX == newX and self.leftDownOriginY == newY):
             ###
             # TODO: Implement "bubble GUI"
+            # TODO: I don't even remember what I meant by "bubble GUI"
             ###
             self.msgFrame.Show(not self.msgFrame.IsShown())
 
